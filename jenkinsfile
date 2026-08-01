@@ -1,0 +1,55 @@
+pipeline {
+    agent any
+
+    tools {
+        jdk 'jdk-21'
+        maven 'maven-3'
+    }
+
+    environment {
+        APP_NAME = "register-app"
+        RELEASE  = "1.0.0"
+    }
+
+    stages {
+        stage("Cleanup Workspace") {
+            steps {
+                cleanWs()
+            }
+        }
+
+        stage("Checkout from SCM") {
+            steps {
+                git branch: 'main', 
+                    credentialsId: 'github', 
+                    url: 'https://github.com/Youhana-Elkess/register-app.git'
+            }
+        }
+
+        stage("Build Application") {
+            steps {
+                echo 'Building WAR package...'
+                sh "mvn clean package"
+            }
+        }
+
+        stage("Test Application") {
+            steps {
+                echo 'Running tests...'
+                sh "mvn test"
+            }
+        }
+    }
+
+    post {
+        always {
+            echo "Pipeline finished execution."
+        }
+        success {
+            echo "SUCCESS: App packaged successfully into target/*.war"
+        }
+        failure {
+            echo "FAILURE: Build or test step failed."
+        }
+    }
+}
