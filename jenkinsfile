@@ -1,11 +1,10 @@
 pipeline {
     agent any
 
-       tools {
+    tools {
         jdk 'java21'
         maven 'Maven3'
     }
-
 
     environment {
         APP_NAME = "register-app"
@@ -30,7 +29,7 @@ pipeline {
         stage("Build Application") {
             steps {
                 echo 'Building WAR package...'
-                sh "mvn clean package"
+                sh "mvn clean package -DskipTests"
             }
         }
 
@@ -40,16 +39,25 @@ pipeline {
                 sh "mvn test"
             }
         }
-    }
- stage("SonarQube Analysis"){
-           steps {
-	           script {
-		        withSonarQubeEnv(credentialsId: 'jenkins-sonarqube-token') { 
+
+        stage("SonarQube Analysis") {
+            steps {
+                script {
+                    withSonarQubeEnv('sonarqube-server') { 
                         sh "mvn sonar:sonar"
-		        }
-	        }
+                    }
+                }
+            }
         }
-       
+
+        stage("Quality Gate") {
+            steps {
+                timeout(time: 5, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
+                }
+            }
+        }
+    }
 
     post {
         always {
