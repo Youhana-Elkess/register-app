@@ -97,9 +97,10 @@ pipeline {
         stage("Trigger CD Pipeline") {
             steps {
                 script {
-                    withCredentials([string(credentialsId: 'JENKINS_API_TOKEN', variable: 'JENKINS_API_TOKEN')]) {
-                        sh "curl -v -k --user youhana:\${JENKINS_API_TOKEN} -X POST -H 'cache-control: no-cache' -H 'content-type: application/x-www-form-urlencoded' 'http://100.62.5.51:8080/job/register-app-cd/buildWithParameters?token=register-token&IMAGE_TAG=\${BUILD_NUMBER}'"
-                    }
+                    echo "Triggering downstream GitOps CD pipeline register-app-cd with IMAGE_TAG=${BUILD_NUMBER}..."
+                    build job: 'register-app-cd', 
+                          parameters: [string(name: 'IMAGE_TAG', value: "${BUILD_NUMBER}")], 
+                          wait: false
                 }
             }
         }
