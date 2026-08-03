@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: register-app
-          image: youhana123/register-app:29
+          image: youhana123/register-app:
           ports:
             - containerPort: 8080
           resources:
