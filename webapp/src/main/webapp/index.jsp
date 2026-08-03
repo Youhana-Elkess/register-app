@@ -1,6 +1,6 @@
 <form action="action_page.php">
   <div class="container">
-    <h1>New User Registration - Deployed via Argo CD GitOps Pipeline! 🚀</h1>
+    <h1>DevOps GitOps End-to-End Automated Continuous Delivery! 🚀🎉</h1>
     <p>Please fill in this form to create an account.</p>
     <hr>
      
