@@ -1,12 +1,18 @@
 pipeline {
     agent any
 
-    parameters {
-        string(name: 'IMAGE_TAG', defaultValue: 'latest', description: 'Docker Image Tag to deploy via GitOps')
+    environment {
+        APP_NAME = "youhana123/register-app"
     }
 
     stages {
-        stage("Checkout K8s Manifests") {
+        stage("Cleanup Workspace") {
+            steps {
+                cleanWs()
+            }
+        }
+
+        stage("Checkout from SCM") {
             steps {
                 git branch: 'main', 
                     credentialsId: 'github', 
@@ -14,23 +20,26 @@ pipeline {
             }
         }
 
-        stage("Update Manifest & Push to GitOps") {
+        stage("Update the Deployment Tags") {
             steps {
-                script {
-                    withCredentials([usernamePassword(credentialsId: 'github', passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
-                        sh """
-                            git config user.name "Jenkins CD"
-                            git config user.email "jenkins@devops.local"
-                            
-                            # Replace image tag in k8s/deployment.yaml with parameter value
-                            sed -i 's|image: youhana123/register-app:.*|image: youhana123/register-app:${params.IMAGE_TAG}|g' k8s/deployment.yaml
-                            
-                            # Commit and push back to GitHub
-                            git add k8s/deployment.yaml
-                            git commit -m "ci(gitops): update image tag to ${params.IMAGE_TAG} [skip ci]" || echo "No changes"
-                            git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/Youhana-Elkess/register-app.git HEAD:main
-                        """
-                    }
+                sh """
+                   cat k8s/deployment.yaml
+                   sed -i 's|${APP_NAME}:.*|${APP_NAME}:${IMAGE_TAG}|g' k8s/deployment.yaml
+                   cat k8s/deployment.yaml
+                """
+            }
+        }
+
+        stage("Push the changed deployment file to Git") {
+            steps {
+                sh """
+                   git config --global user.name "Youhana-Elkess"
+                   git config --global user.email "youhana939@gmail.com"
+                   git add k8s/deployment.yaml
+                   git commit -m "Updated Deployment Manifest [skip ci]" || echo "No changes to commit"
+                """
+                withCredentials([gitUsernamePassword(credentialsId: 'github', gitToolName: 'Default')]) {
+                    sh "git push https://github.com/Youhana-Elkess/register-app.git main"
                 }
             }
         }
