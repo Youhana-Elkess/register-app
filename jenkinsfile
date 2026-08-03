@@ -88,8 +88,19 @@ pipeline {
         stage("Cleanup Artifacts") {
             steps {
                 script {
-                    sh "docker rmi ${IMAGE_NAME}:${IMAGE_TAG}"
-                    sh "docker rmi ${IMAGE_NAME}:latest"
+                    sh "docker rmi ${IMAGE_NAME}:${IMAGE_TAG}" || true
+                    sh "docker rmi ${IMAGE_NAME}:latest" || true
+                }
+            }
+        }
+
+        stage("Trigger GitOps CD Job") {
+            steps {
+                script {
+                    echo "Triggering CD deployment job register-app-cd with IMAGE_TAG=${BUILD_NUMBER}..."
+                    build job: 'register-app-cd', 
+                          parameters: [string(name: 'IMAGE_TAG', value: "${BUILD_NUMBER}")], 
+                          wait: false
                 }
             }
         }

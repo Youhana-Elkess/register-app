@@ -1,0 +1,38 @@
+pipeline {
+    agent any
+
+    parameters {
+        string(name: 'IMAGE_TAG', defaultValue: 'latest', description: 'Docker Image Tag to deploy via GitOps')
+    }
+
+    stages {
+        stage("Checkout K8s Manifests") {
+            steps {
+                git branch: 'main', 
+                    credentialsId: 'github', 
+                    url: 'https://github.com/Youhana-Elkess/register-app.git'
+            }
+        }
+
+        stage("Update Manifest & Push to GitOps") {
+            steps {
+                script {
+                    withCredentials([usernamePassword(credentialsId: 'github', passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
+                        sh """
+                            git config user.name "Jenkins CD"
+                            git config user.email "jenkins@devops.local"
+                            
+                            # Replace image tag in k8s/deployment.yaml with parameter value
+                            sed -i 's|image: youhana123/register-app:.*|image: youhana123/register-app:${params.IMAGE_TAG}|g' k8s/deployment.yaml
+                            
+                            # Commit and push back to GitHub
+                            git add k8s/deployment.yaml
+                            git commit -m "ci(gitops): update image tag to ${params.IMAGE_TAG} [skip ci]" || echo "No changes"
+                            git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/Youhana-Elkess/register-app.git HEAD:main
+                        """
+                    }
+                }
+            }
+        }
+    }
+}
